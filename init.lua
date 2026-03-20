@@ -91,10 +91,8 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Ensure treesitter install directory is in runtimepath
-local data_site = vim.fn.stdpath('data') .. '/site'
-if not string.find(vim.o.runtimepath, data_site, 1, true) then
-  vim.opt.rtp:append(data_site)
-end
+local data_site = vim.fn.stdpath 'data' .. '/site'
+if not string.find(vim.o.runtimepath, data_site, 1, true) then vim.opt.rtp:append(data_site) end
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
@@ -339,7 +337,7 @@ local function ensure_external_copilot_session()
   local session_name, cwd = external_copilot_session_name()
   if tmux_session_exists(session_name) then return session_name, cwd, false end
 
-  local command = { 'tmux', 'new-session', '-d', '-s', session_name, '-c', cwd, 'copilot' }
+  local command = { 'tmux', 'new-session', '-d', '-s', session_name, '-c', cwd, 'copilot', '--alt-screen' }
   local job_id = vim.fn.jobstart(command, { cwd = cwd, detach = true })
   if job_id <= 0 then
     vim.notify('Failed to start external Copilot session', vim.log.levels.ERROR)
@@ -852,6 +850,9 @@ require('lazy').setup({
   -- Plugins live in `lua/plugins/*.lua`
   { import = 'plugins' },
 }, {
+  rocks = {
+    enabled = false,
+  },
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table

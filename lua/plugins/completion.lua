@@ -3,6 +3,9 @@ return {
     'saghen/blink.cmp',
     event = 'VimEnter',
     version = '1.*',
+    build = (function()
+      if vim.fn.executable 'cargo' == 1 then return 'cargo build --release' end
+    end)(),
     dependencies = {
       -- Snippet Engine
       {
