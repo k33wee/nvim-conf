@@ -10,6 +10,10 @@ A starting point for Neovim that is:
 
 **NOT** a Neovim distribution, but instead a starting point for your configuration.
 
+> [!NOTE]
+> This fork now keeps most startup config in `lua/config/*.lua`, with `init.lua`
+> acting as a small entrypoint.
+
 ## Installation
 
 ### Install Neovim
