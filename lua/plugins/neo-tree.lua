@@ -4,12 +4,12 @@ return {
   {
     'nvim-neo-tree/neo-tree.nvim',
     version = '*',
+    cmd = 'Neotree',
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-tree/nvim-web-devicons',
       'MunifTanjim/nui.nvim',
     },
-    lazy = false,
     keys = {
       { '<leader>e', '<cmd>Neotree toggle<CR>', desc = 'Explorer (Neo-tree)' },
       { '\\', '<cmd>Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
@@ -51,8 +51,11 @@ return {
         callback = function(data)
           local directory = vim.fn.isdirectory(data.file) == 1
           if not directory then return end
-          vim.cmd.cd(data.file)
-          require('neo-tree.command').execute { action = 'show', position = 'left', dir = data.file }
+          local dir = vim.fn.fnamemodify(data.file, ':p')
+          vim.cmd.cd(dir)
+          vim.schedule(function()
+            vim.cmd('Neotree current dir=' .. vim.fn.fnameescape(dir))
+          end)
         end,
       })
     end,

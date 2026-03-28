@@ -11,6 +11,8 @@ local function compact_managed_terms()
   return managed_toggle_terms
 end
 
+local function schedule_compact_managed_terms() vim.schedule(compact_managed_terms) end
+
 function M.setup()
   local copilot = require 'config.copilot'
 
@@ -41,6 +43,7 @@ function M.setup()
           if win ~= -1 then vim.api.nvim_win_close(win, true) end
         end
       end
+      schedule_compact_managed_terms()
       return
     end
 
@@ -63,6 +66,8 @@ function M.setup()
       direction = 'horizontal',
       hidden = true,
       on_open = function() vim.cmd 'startinsert!' end,
+      on_close = schedule_compact_managed_terms,
+      on_exit = schedule_compact_managed_terms,
     }
     table.insert(managed_toggle_terms, new_term)
     new_term:toggle()
@@ -76,6 +81,7 @@ function M.setup()
       return
     end
     vim.api.nvim_buf_delete(buf, { force = true })
+    schedule_compact_managed_terms()
   end, { desc = 'Kill current terminal buffer' })
 end
 
