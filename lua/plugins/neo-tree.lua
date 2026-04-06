@@ -35,15 +35,13 @@ return {
       },
     },
     init = function()
-      vim.api.nvim_create_user_command('OpenWithSystemApp', function(opts)
-        media.open(opts.args ~= '' and opts.args or nil)
-      end, {
+      vim.api.nvim_create_user_command('OpenWithSystemApp', function(opts) media.open(opts.args ~= '' and opts.args or nil) end, {
         nargs = '?',
         complete = 'file',
         desc = 'Open a file with the system default application',
       })
 
-      vim.keymap.set('n', '<leader>mO', media.open, { desc = '[M]edia [O]pen with system app' })
+      vim.keymap.set('n', '<leader>mo', media.open, { desc = '[M]edia [O]pen with system app' })
 
       vim.api.nvim_create_autocmd('VimEnter', {
         desc = 'Open Neo-tree when opening a directory',
@@ -53,9 +51,7 @@ return {
           if not directory then return end
           local dir = vim.fn.fnamemodify(data.file, ':p')
           vim.cmd.cd(dir)
-          vim.schedule(function()
-            vim.cmd('Neotree current dir=' .. vim.fn.fnameescape(dir))
-          end)
+          vim.schedule(function() vim.cmd('Neotree current dir=' .. vim.fn.fnameescape(dir)) end)
         end,
       })
     end,

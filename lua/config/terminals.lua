@@ -83,6 +83,21 @@ function M.setup()
     vim.api.nvim_buf_delete(buf, { force = true })
     schedule_compact_managed_terms()
   end, { desc = 'Kill current terminal buffer' })
+
+  vim.keymap.set('n', '<leader>tK', function()
+    local ok, terminal_mod = pcall(require, 'toggleterm.terminal')
+    if not ok then
+      vim.notify('ToggleTerm not found. Run :Lazy to check installation.', vim.log.levels.WARN)
+      return
+    end
+
+    local Terminal = terminal_mod.Terminal
+    local terms = compact_managed_terms()
+    for _, term in ipairs(terms) do
+      if term.bufnr and vim.api.nvim_buf_is_valid(term.bufnr) then vim.api.nvim_buf_delete(term.bufnr, { force = true }) end
+    end
+    schedule_compact_managed_terms()
+  end, { desc = 'Kill all managed terminals' })
 end
 
 return M
