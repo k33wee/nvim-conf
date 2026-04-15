@@ -26,6 +26,12 @@ function M.setup()
   vim.o.cursorline = true
   vim.o.scrolloff = 10
   vim.o.confirm = true
+
+  -- Folding (nvim-ufo requires a large foldlevel and foldenable)
+  vim.o.foldcolumn = '1'
+  vim.o.foldlevel = 99
+  vim.o.foldlevelstart = 99
+  vim.o.foldenable = true
 end
 
 return M

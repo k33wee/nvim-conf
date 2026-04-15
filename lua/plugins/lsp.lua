@@ -61,6 +61,12 @@ return {
 
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
+      -- nvim-ufo: advertise foldingRange support to LSP servers
+      capabilities.textDocument.foldingRange = {
+        dynamicRegistration = false,
+        lineFoldingOnly = true,
+      }
+
       local servers = {
         basedpyright = {}, -- Better than pyright for uv projects
         ruff = {}, -- Ruff as LSP (linting + quick fixes)
