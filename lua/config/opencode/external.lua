@@ -27,7 +27,7 @@ local function ensure_external_opencode_session()
   local session_name, cwd = external_opencode_session_name()
   if tmux_session_exists(session_name) then return session_name, cwd, false end
 
-  local command = { 'tmux', 'new-session', '-d', '-s', session_name, '-c', cwd, 'opencode', '--model', 'github-copilot/gpt-4.1', '--agent', 'beast-mode' }
+  local command = { 'tmux', 'new-session', '-d', '-s', session_name, '-c', cwd, 'opencode', '--model', 'github-copilot/gpt-4.1' }
   local job_id = vim.fn.jobstart(command, { cwd = cwd, detach = true })
   if job_id <= 0 then
     vim.notify('Failed to start external OpenCode session', vim.log.levels.ERROR)

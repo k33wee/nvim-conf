@@ -21,9 +21,20 @@ return {
 
       formatters_by_ft = {
         lua = { 'stylua' },
-        python = { 'ruff_format', 'ruff_organize_imports' },
+        python = function(bufnr)
+          local conform = require('conform')
+          if conform.get_formatter_info('ruff_format', bufnr).available then
+            return { 'ruff_format', 'ruff_organize_imports' }
+          elseif conform.get_formatter_info('black', bufnr).available then
+            return { 'isort', 'black' }
+          else
+            return { 'isort' }
+          end
+        end,
         rust = { 'rustfmt' },
         markdown = { 'prettier' },
+        json = { 'prettier' },
+        jsonc = { 'prettier' },
 
         -- We define the function inside the table directly or reference it
         javascript = function(bufnr) return get_js_formatter(bufnr) end,

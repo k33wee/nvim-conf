@@ -53,7 +53,7 @@ local function ensure_opencode_term()
     end
 
     opencode_term = Terminal:new {
-      cmd = 'opencode --model github-copilot/gpt-4.1 --agent beast-mode',
+      cmd = 'opencode --model github-copilot/gpt-4.1',
       direction = 'vertical',
       hidden = true,
       close_on_exit = false,
@@ -80,7 +80,7 @@ local function ensure_opencode_term()
 
   vim.cmd 'botright vsplit'
   vim.api.nvim_win_set_width(0, math.floor(vim.o.columns * 0.4))
-  vim.cmd 'terminal opencode --model github-copilot/gpt-4.1 --agent beast-mode'
+  vim.cmd 'terminal opencode --model github-copilot/gpt-4.1'
   opencode_term_buf = vim.api.nvim_get_current_buf()
   return true
 end
