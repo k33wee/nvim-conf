@@ -10,7 +10,7 @@ function M.setup()
     underline = { severity = vim.diagnostic.severity.ERROR },
     virtual_text = true,
     virtual_lines = false,
-    jump = { float = true },
+    jump = { on_jump = true },
   }
 
   vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })

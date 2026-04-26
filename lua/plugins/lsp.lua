@@ -16,7 +16,7 @@ return {
       'saghen/blink.cmp',
     },
     config = function()
-      vim.lsp.set_log_level 'error' -- Only log actual errors, not warnings/info
+      vim.lsp.log.set_level 'error' -- Only log actual errors, not warnings/info
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
