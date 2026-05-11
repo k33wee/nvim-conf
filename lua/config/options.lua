@@ -3,7 +3,11 @@ local M = {}
 function M.setup()
   local data_site = vim.fn.stdpath 'data' .. '/site'
   if not string.find(vim.o.runtimepath, data_site, 1, true) then vim.opt.rtp:append(data_site) end
-
+  --
+  -- Fix for double Enter/Backspace in Alacritty
+  vim.api.nvim_create_autocmd('VimEnter', {
+    callback = function() io.stdout:write '\27[>1u' end,
+  })
   vim.g.have_nerd_font = true
 
   vim.o.number = true
