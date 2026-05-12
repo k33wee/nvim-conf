@@ -36,6 +36,10 @@ applyTo: '**'
   - Kept `<leader>sw` and `<leader>sr` behavior unchanged intentionally
 - Validation:
   - `nvim --headless "+lua dofile('lua/plugins/telescope.lua')" +qa` succeeded (no output)
+- User later asked why `<leader>cp` opens cosmic-term even with alacritty as default terminal.
+- Root cause found in `lua/config/opencode/external.lua`: the launcher preference order hard-codes `cosmic-term` first, and `build_external_terminal_command()` picks the first executable launcher unless `vim.g.opencode_external_terminal` overrides it.
+- Updated plan for `<leader>cp`: prefer `$TERMINAL` when set, then detect the current terminal via terminal-specific env vars (`ALACRITTY_WINDOW_ID`, `KITTY_WINDOW_ID`/`KITTY_PID`, `WEZTERM_PANE`, `GHOSTTY_RESOURCES_DIR`/`GHOSTTY_BIN_DIR`, `FOOT_SESSION`, `GNOME_TERMINAL_SCREEN`, `KONSOLE_VERSION`), then fall back to the existing executable preference list.
+- Fixed a regression in the detection path where the launcher was being resolved before `cwd` was available; detection now returns the terminal name and rebuilds the launcher with the real working directory.
 
 ## Notes
 - Do not store sensitive information.

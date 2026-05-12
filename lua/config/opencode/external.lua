@@ -1,5 +1,143 @@
 local M = {}
 
+local function launcher_name_from_command(command)
+  if type(command) ~= 'string' or command == '' then return nil end
+  return vim.fn.fnamemodify(command, ':t')
+end
+
+local function launcher_for_name(name, cwd)
+  if name == 'cosmic-term' then
+    return {
+      executable = 'cosmic-term',
+      build = function(args)
+        local cmd = { 'cosmic-term', '--title', 'OpenCode CLI', '--working-directory', cwd, '--command' }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'kitty' then
+    return {
+      executable = 'kitty',
+      build = function(args)
+        local cmd = { 'kitty', '--title', 'OpenCode CLI', '--directory', cwd }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'wezterm' then
+    return {
+      executable = 'wezterm',
+      build = function(args)
+        local cmd = { 'wezterm', 'start', '--cwd', cwd, '--', 'sh', '-lc', 'exec "$@"', 'sh' }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'alacritty' then
+    return {
+      executable = 'alacritty',
+      build = function(args)
+        local cmd = { 'alacritty', '--title', 'OpenCode CLI', '--working-directory', cwd, '-e' }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'ghostty' then
+    return {
+      executable = 'ghostty',
+      build = function(args)
+        local cmd = { 'ghostty', '--title=OpenCode CLI', '--working-directory=' .. cwd, '-e' }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'foot' then
+    return {
+      executable = 'foot',
+      build = function(args)
+        local cmd = { 'foot', '--title', 'OpenCode CLI', '--working-directory', cwd }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'gnome-terminal' then
+    return {
+      executable = 'gnome-terminal',
+      build = function(args)
+        local cmd = { 'gnome-terminal', '--title=OpenCode CLI', '--working-directory=' .. cwd, '--' }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'konsole' then
+    return {
+      executable = 'konsole',
+      build = function(args)
+        local cmd = { 'konsole', '--workdir', cwd, '-p', 'tabtitle=OpenCode CLI', '-e' }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  if name == 'xterm' then
+    return {
+      executable = 'xterm',
+      build = function(args)
+        local cmd = {
+          'xterm',
+          '-title',
+          'OpenCode CLI',
+          '-bg',
+          '#11111b',
+          '-fg',
+          '#cdd6f4',
+          '-fa',
+          'Monospace',
+          '-fs',
+          '11',
+          '-e',
+        }
+        vim.list_extend(cmd, args)
+        return cmd
+      end,
+    }
+  end
+
+  return nil
+end
+
+local function detect_current_terminal()
+  local terminal_env = launcher_name_from_command(vim.env.TERMINAL)
+  if terminal_env then
+    if launcher_for_name(terminal_env, '') then return terminal_env end
+  end
+
+  if vim.env.ALACRITTY_WINDOW_ID then return 'alacritty' end
+  if vim.env.KITTY_WINDOW_ID or vim.env.KITTY_PID then return 'kitty' end
+  if vim.env.WEZTERM_PANE then return 'wezterm' end
+  if vim.env.GHOSTTY_RESOURCES_DIR or vim.env.GHOSTTY_BIN_DIR then return 'ghostty' end
+  if vim.env.FOOT_SESSION then return 'foot' end
+  if vim.env.GNOME_TERMINAL_SCREEN then return 'gnome-terminal' end
+  if vim.env.KONSOLE_VERSION then return 'konsole' end
+
+  return nil
+end
+
 local function external_opencode_session_name()
   local cwd = vim.fn.getcwd()
   local digest = vim.fn.sha256(cwd):sub(1, 12)
@@ -42,91 +180,15 @@ local function build_external_terminal_command(command_args, cwd)
   if sysname == 'Darwin' then return nil, cwd end
 
   local launchers = {
-    {
-      executable = 'cosmic-term',
-      build = function(args)
-        local cmd = { 'cosmic-term', '--title', 'OpenCode CLI', '--working-directory', cwd, '--command' }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'kitty',
-      build = function(args)
-        local cmd = { 'kitty', '--title', 'OpenCode CLI', '--directory', cwd }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'wezterm',
-      build = function(args)
-        local cmd = { 'wezterm', 'start', '--cwd', cwd, '--', 'sh', '-lc', 'exec "$@"', 'sh' }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'alacritty',
-      build = function(args)
-        local cmd = { 'alacritty', '--title', 'OpenCode CLI', '--working-directory', cwd, '-e' }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'ghostty',
-      build = function(args)
-        local cmd = { 'ghostty', '--title=OpenCode CLI', '--working-directory=' .. cwd, '-e' }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'foot',
-      build = function(args)
-        local cmd = { 'foot', '--title', 'OpenCode CLI', '--working-directory', cwd }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'gnome-terminal',
-      build = function(args)
-        local cmd = { 'gnome-terminal', '--title=OpenCode CLI', '--working-directory=' .. cwd, '--' }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'konsole',
-      build = function(args)
-        local cmd = { 'konsole', '--workdir', cwd, '-p', 'tabtitle=OpenCode CLI', '-e' }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
-    {
-      executable = 'xterm',
-      build = function(args)
-        local cmd = {
-          'xterm',
-          '-title',
-          'OpenCode CLI',
-          '-bg',
-          '#11111b',
-          '-fg',
-          '#cdd6f4',
-          '-fa',
-          'Monospace',
-          '-fs',
-          '11',
-          '-e',
-        }
-        vim.list_extend(cmd, args)
-        return cmd
-      end,
-    },
+    launcher_for_name('cosmic-term', cwd),
+    launcher_for_name('kitty', cwd),
+    launcher_for_name('wezterm', cwd),
+    launcher_for_name('alacritty', cwd),
+    launcher_for_name('ghostty', cwd),
+    launcher_for_name('foot', cwd),
+    launcher_for_name('gnome-terminal', cwd),
+    launcher_for_name('konsole', cwd),
+    launcher_for_name('xterm', cwd),
   }
 
   local configured_terminal = vim.g.opencode_external_terminal
@@ -136,6 +198,12 @@ local function build_external_terminal_command(command_args, cwd)
     end
     vim.notify(string.format('Unsupported opencode external terminal: %s', configured_terminal), vim.log.levels.ERROR)
     return nil, nil
+  end
+
+  local detected_terminal = detect_current_terminal()
+  if detected_terminal then
+    local launcher = launcher_for_name(detected_terminal, cwd)
+    if launcher and vim.fn.executable(launcher.executable) == 1 then return launcher.build(command_args), cwd end
   end
 
   for _, launcher in ipairs(launchers) do
