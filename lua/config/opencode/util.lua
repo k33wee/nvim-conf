@@ -27,7 +27,7 @@ function M.file_line_reference(start_line, end_line)
   if full_path == '' then return nil end
 
   local rel_path = vim.fn.fnamemodify(full_path, ':.')
-  return string.format('@%s:%d-%d', rel_path, start_line, end_line)
+  return string.format('@%s L%d-%d', rel_path, start_line, end_line)
 end
 
 function M.get_visual_reference()
