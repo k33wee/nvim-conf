@@ -2,6 +2,11 @@ return {
   {
     'OXY2DEV/markview.nvim',
     ft = { 'markdown', 'quarto', 'rmd' },
+    opts = {
+      preview = {
+        enable = false,
+      },
+    },
 
     -- Completion for `blink.cmp`
     -- dependencies = { "saghen/blink.cmp" },

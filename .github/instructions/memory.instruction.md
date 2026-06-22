@@ -28,6 +28,8 @@ applyTo: "**"
 
 ## Context7 Research History
 
+- Markview.nvim researched via Context7 (`/oxy2dev/markview.nvim`) for default disabled previews. Current docs show `require('markview').setup({ preview = { enable = false } })` disables automatic previews, and `:Markview` toggles previews globally while `:Markview Enable/Disable` control global state explicitly.
+- Official Markview wiki cross-check (`raw.githubusercontent.com/wiki/OXY2DEV/markview.nvim/Preview.md` and `Usage.md`) confirms `preview.enable = false` means previews are not enabled when attaching to new buffers and is the documented on-demand preview recipe.
 - Attempted Context7 search endpoint for telescope query persistence (`https://context7.com/search?q=telescope.nvim+default_text`), but content is JS-rendered and not directly retrievable via static fetch.
 - Fetched official Telescope documentation and source directly from GitHub/raw endpoints.
 - Confirmed picker internals support `default_text` and `on_input_filter_cb` with callback return shape `{ prompt = <string>, updated_finder = <finder>|nil }`.
@@ -35,6 +37,7 @@ applyTo: "**"
 
 ## Conversation History
 
+- Completed task: made Markview previews disabled by default in `lua/plugins/markdown.lua` by adding lazy.nvim `opts = { preview = { enable = false } }` to the `OXY2DEV/markview.nvim` spec; users can still enable/toggle with Markview commands after the plugin loads for markdown-like filetypes.
 - User requested: solve all problems reported by `:checkhealth` in this Neovim configuration.
 - Current plan: inspect repo state, review Neovim health/provider docs, run `checkhealth`, fix config-caused issues, and re-verify.
 - First `checkhealth` run findings:
