@@ -106,9 +106,7 @@ local function check_core_utils()
 end
 
 local function check_thunk(opts)
-  return function()
-    check(opts)
-  end
+  return function() check(opts) end
 end
 
 ---@async
@@ -169,19 +167,22 @@ end
 
 ---@async
 local function check_mason()
-  providers.github.get_latest_release('mason-org/mason.nvim'):on_success(function(latest_release)
-    a.scheduler()
-    if latest_release.tag_name ~= version.VERSION then
-      report_warn(('mason.nvim version %s'):format(version.VERSION), {
-        ('The latest version of mason.nvim is: %s'):format(latest_release.tag_name),
-      })
-    else
+  providers.github
+    .get_latest_release('mason-org/mason.nvim')
+    :on_success(function(latest_release)
+      a.scheduler()
+      if latest_release.tag_name ~= version.VERSION then
+        report_warn(('mason.nvim version %s'):format(version.VERSION), {
+          ('The latest version of mason.nvim is: %s'):format(latest_release.tag_name),
+        })
+      else
+        report_ok(('mason.nvim version %s'):format(version.VERSION))
+      end
+    end)
+    :on_failure(function()
+      a.scheduler()
       report_ok(('mason.nvim version %s'):format(version.VERSION))
-    end
-  end):on_failure(function()
-    a.scheduler()
-    report_ok(('mason.nvim version %s'):format(version.VERSION))
-  end)
+    end)
 
   report_ok(('PATH: %s'):format(settings.current.PATH))
   report_ok(('Providers: \n  %s'):format(_.join('\n  ', settings.current.providers)))

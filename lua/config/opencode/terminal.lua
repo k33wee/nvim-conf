@@ -1,4 +1,5 @@
 local M = {}
+local pi = require 'config.opencode.pi'
 
 local opencode_term_buf = nil
 local opencode_term = nil
@@ -42,6 +43,11 @@ local function focus_terminal_if_visible()
 end
 
 local function ensure_opencode_term()
+  if vim.fn.executable(pi.executable) ~= 1 then
+    vim.notify('Pi CLI not found in $PATH', vim.log.levels.ERROR)
+    return false
+  end
+
   local ok, terminal_mod = pcall(require, 'toggleterm.terminal')
   if ok and terminal_mod and terminal_mod.Terminal then
     local Terminal = terminal_mod.Terminal
@@ -53,7 +59,7 @@ local function ensure_opencode_term()
     end
 
     opencode_term = Terminal:new {
-      cmd = 'opencode --model github-copilot/gpt-4.1',
+      cmd = table.concat(pi.args(), ' '),
       direction = 'vertical',
       hidden = true,
       close_on_exit = false,
@@ -73,14 +79,9 @@ local function ensure_opencode_term()
     return true
   end
 
-  if vim.fn.executable 'opencode' ~= 1 then
-    vim.notify('opencode CLI not found in $PATH', vim.log.levels.ERROR)
-    return false
-  end
-
   vim.cmd 'botright vsplit'
   vim.api.nvim_win_set_width(0, math.floor(vim.o.columns * 0.4))
-  vim.cmd 'terminal opencode --model github-copilot/gpt-4.1'
+  vim.cmd('terminal ' .. table.concat(pi.args(), ' '))
   opencode_term_buf = vim.api.nvim_get_current_buf()
   return true
 end
@@ -112,13 +113,13 @@ function M.send_reference(reference)
 
   local buf = opencode_term_buf
   if not buf or not vim.api.nvim_buf_is_valid(buf) then
-    vim.notify('OpenCode terminal buffer is not available', vim.log.levels.ERROR)
+    vim.notify('Pi terminal buffer is not available', vim.log.levels.ERROR)
     return false
   end
 
   local ok, job_id = pcall(vim.api.nvim_buf_get_var, buf, 'terminal_job_id')
   if not ok or type(job_id) ~= 'number' then
-    vim.notify('OpenCode terminal is not ready', vim.log.levels.ERROR)
+    vim.notify('Pi terminal is not ready', vim.log.levels.ERROR)
     return false
   end
 

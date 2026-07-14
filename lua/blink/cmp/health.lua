@@ -52,7 +52,9 @@ function health.report_sources()
 
   local disabled_providers = {}
   for provider_id, _ in pairs(all_providers) do
-    if not vim.list_contains(default_providers, provider_id) and not vim.list_contains(cmdline_providers, provider_id) then table.insert(disabled_providers, provider_id) end
+    if not vim.list_contains(default_providers, provider_id) and not vim.list_contains(cmdline_providers, provider_id) then
+      table.insert(disabled_providers, provider_id)
+    end
   end
 
   health.report_sources_list('Default sources', default_providers)

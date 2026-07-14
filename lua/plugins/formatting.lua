@@ -22,7 +22,7 @@ return {
       formatters_by_ft = {
         lua = { 'stylua' },
         python = function(bufnr)
-          local conform = require('conform')
+          local conform = require 'conform'
           if conform.get_formatter_info('ruff_format', bufnr).available then
             return { 'ruff_format', 'ruff_organize_imports' }
           elseif conform.get_formatter_info('black', bufnr).available then

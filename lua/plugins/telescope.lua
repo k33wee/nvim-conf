@@ -59,9 +59,7 @@ return {
           local result = previous_input_filter_cb and previous_input_filter_cb(prompt) or {}
           if type(result) ~= 'table' then result = {} end
 
-          if type(result.prompt) == 'string' then
-            last_search_text = result.prompt
-          end
+          if type(result.prompt) == 'string' then last_search_text = result.prompt end
 
           return result
         end
@@ -69,9 +67,7 @@ return {
         return opts
       end
 
-      local function open_search(picker, opts)
-        picker(with_persistent_prompt(opts))
-      end
+      local function open_search(picker, opts) picker(with_persistent_prompt(opts)) end
 
       vim.keymap.set('n', '<leader>sh', function() open_search(builtin.help_tags) end, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', function() open_search(builtin.keymaps) end, { desc = '[S]earch [K]eymaps' })
@@ -127,10 +123,13 @@ return {
       -- Override default behavior and theme when searching
       vim.keymap.set('n', '<leader>/', function()
         -- You can pass additional configuration to Telescope to change the theme, layout, etc.
-        open_search(builtin.current_buffer_fuzzy_find, require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
+        open_search(
+          builtin.current_buffer_fuzzy_find,
+          require('telescope.themes').get_dropdown {
+            winblend = 10,
+            previewer = false,
+          }
+        )
       end, { desc = '[/] Fuzzily search in current buffer' })
 
       vim.keymap.set(

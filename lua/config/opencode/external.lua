@@ -1,4 +1,5 @@
 local M = {}
+local pi = require 'config.opencode.pi'
 
 local function launcher_name_from_command(command)
   if type(command) ~= 'string' or command == '' then return nil end
@@ -10,7 +11,7 @@ local function launcher_for_name(name, cwd)
     return {
       executable = 'cosmic-term',
       build = function(args)
-        local cmd = { 'cosmic-term', '--title', 'OpenCode CLI', '--working-directory', cwd, '--command' }
+        local cmd = { 'cosmic-term', '--title', 'Pi CLI', '--working-directory', cwd, '--command' }
         vim.list_extend(cmd, args)
         return cmd
       end,
@@ -21,7 +22,7 @@ local function launcher_for_name(name, cwd)
     return {
       executable = 'kitty',
       build = function(args)
-        local cmd = { 'kitty', '--title', 'OpenCode CLI', '--directory', cwd }
+        local cmd = { 'kitty', '--title', 'Pi CLI', '--directory', cwd }
         vim.list_extend(cmd, args)
         return cmd
       end,
@@ -43,7 +44,7 @@ local function launcher_for_name(name, cwd)
     return {
       executable = 'alacritty',
       build = function(args)
-        local cmd = { 'alacritty', '--title', 'OpenCode CLI', '--working-directory', cwd, '-e' }
+        local cmd = { 'alacritty', '--title', 'Pi CLI', '--working-directory', cwd, '-e' }
         vim.list_extend(cmd, args)
         return cmd
       end,
@@ -54,7 +55,7 @@ local function launcher_for_name(name, cwd)
     return {
       executable = 'ghostty',
       build = function(args)
-        local cmd = { 'ghostty', '--title=OpenCode CLI', '--working-directory=' .. cwd, '-e' }
+        local cmd = { 'ghostty', '--title=Pi CLI', '--working-directory=' .. cwd, '-e' }
         vim.list_extend(cmd, args)
         return cmd
       end,
@@ -65,7 +66,7 @@ local function launcher_for_name(name, cwd)
     return {
       executable = 'foot',
       build = function(args)
-        local cmd = { 'foot', '--title', 'OpenCode CLI', '--working-directory', cwd }
+        local cmd = { 'foot', '--title', 'Pi CLI', '--working-directory', cwd }
         vim.list_extend(cmd, args)
         return cmd
       end,
@@ -76,7 +77,7 @@ local function launcher_for_name(name, cwd)
     return {
       executable = 'gnome-terminal',
       build = function(args)
-        local cmd = { 'gnome-terminal', '--title=OpenCode CLI', '--working-directory=' .. cwd, '--' }
+        local cmd = { 'gnome-terminal', '--title=Pi CLI', '--working-directory=' .. cwd, '--' }
         vim.list_extend(cmd, args)
         return cmd
       end,
@@ -87,7 +88,7 @@ local function launcher_for_name(name, cwd)
     return {
       executable = 'konsole',
       build = function(args)
-        local cmd = { 'konsole', '--workdir', cwd, '-p', 'tabtitle=OpenCode CLI', '-e' }
+        local cmd = { 'konsole', '--workdir', cwd, '-p', 'tabtitle=Pi CLI', '-e' }
         vim.list_extend(cmd, args)
         return cmd
       end,
@@ -101,7 +102,7 @@ local function launcher_for_name(name, cwd)
         local cmd = {
           'xterm',
           '-title',
-          'OpenCode CLI',
+          'Pi CLI',
           '-bg',
           '#11111b',
           '-fg',
@@ -143,7 +144,7 @@ local function external_opencode_session_name()
   local digest = vim.fn.sha256(cwd):sub(1, 12)
   local tail = vim.fn.fnamemodify(cwd, ':t'):gsub('[^%w]+', '-')
   if tail == '' then tail = 'root' end
-  return string.format('opencode-%s-%s', tail, digest), cwd
+  return string.format('pi-%s-%s', tail, digest), cwd
 end
 
 local function tmux_session_exists(session_name)
@@ -153,22 +154,23 @@ end
 
 local function ensure_external_opencode_session()
   if vim.fn.executable 'tmux' ~= 1 then
-    vim.notify('tmux is required for the external OpenCode workflow', vim.log.levels.ERROR)
+    vim.notify('tmux is required for the external Pi workflow', vim.log.levels.ERROR)
     return nil, nil, nil
   end
 
-  if vim.fn.executable 'opencode' ~= 1 then
-    vim.notify('opencode CLI not found in $PATH', vim.log.levels.ERROR)
+  if vim.fn.executable(pi.executable) ~= 1 then
+    vim.notify('Pi CLI not found in $PATH', vim.log.levels.ERROR)
     return nil, nil, nil
   end
 
   local session_name, cwd = external_opencode_session_name()
   if tmux_session_exists(session_name) then return session_name, cwd, false end
 
-  local command = { 'tmux', 'new-session', '-d', '-s', session_name, '-c', cwd, 'opencode', '--model', 'github-copilot/gpt-4.1' }
+  local command = { 'tmux', 'new-session', '-d', '-s', session_name, '-c', cwd }
+  vim.list_extend(command, pi.args())
   local job_id = vim.fn.jobstart(command, { cwd = cwd, detach = true })
   if job_id <= 0 then
-    vim.notify('Failed to start external OpenCode session', vim.log.levels.ERROR)
+    vim.notify('Failed to start external Pi session', vim.log.levels.ERROR)
     return nil, nil, nil
   end
 
@@ -191,12 +193,12 @@ local function build_external_terminal_command(command_args, cwd)
     launcher_for_name('xterm', cwd),
   }
 
-  local configured_terminal = vim.g.opencode_external_terminal
+  local configured_terminal = vim.g.pi_external_terminal or vim.g.opencode_external_terminal
   if type(configured_terminal) == 'string' and configured_terminal ~= '' then
     for _, launcher in ipairs(launchers) do
       if launcher.executable == configured_terminal then return launcher.build(command_args), cwd end
     end
-    vim.notify(string.format('Unsupported opencode external terminal: %s', configured_terminal), vim.log.levels.ERROR)
+    vim.notify(string.format('Unsupported Pi external terminal: %s', configured_terminal), vim.log.levels.ERROR)
     return nil, nil
   end
 
@@ -217,7 +219,7 @@ local function escape_applescript_string(value) return value:gsub('\\', '\\\\'):
 
 local function open_macos_tmux_viewer(session_name, cwd)
   if vim.fn.executable 'osascript' ~= 1 then
-    vim.notify('osascript is required to open Terminal.app on macOS', vim.log.levels.ERROR)
+    vim.notify('osascript is required to open Terminal.app for Pi', vim.log.levels.ERROR)
     return false
   end
 
@@ -237,7 +239,7 @@ local function open_macos_tmux_viewer(session_name, cwd)
 
   local job_id = vim.fn.jobstart(command, { cwd = cwd, detach = true })
   if job_id <= 0 then
-    vim.notify('Failed to open Terminal.app for OpenCode', vim.log.levels.ERROR)
+    vim.notify('Failed to open Terminal.app for Pi', vim.log.levels.ERROR)
     return false
   end
 
@@ -247,7 +249,7 @@ end
 local function type_in_external_opencode_session(session_name, input)
   local job_id = vim.fn.jobstart({ 'tmux', 'send-keys', '-t', session_name, '-l', input }, { detach = true })
   if job_id <= 0 then
-    vim.notify('Failed to send text to external OpenCode session', vim.log.levels.ERROR)
+    vim.notify('Failed to send text to external Pi session', vim.log.levels.ERROR)
     return false
   end
 
@@ -269,7 +271,7 @@ function M.open(opts)
       local command, launch_cwd = build_external_terminal_command({ 'tmux', 'attach-session', '-t', session_name }, cwd)
       if not command then
         vim.notify(
-          'No supported external terminal found. Set vim.g.opencode_external_terminal to one of: cosmic-term, kitty, wezterm, alacritty, ghostty, foot, gnome-terminal, konsole, xterm',
+          'No supported external terminal found. Set vim.g.pi_external_terminal to one of: cosmic-term, kitty, wezterm, alacritty, ghostty, foot, gnome-terminal, konsole, xterm',
           vim.log.levels.ERROR
         )
         return
@@ -277,7 +279,7 @@ function M.open(opts)
 
       local job_id = vim.fn.jobstart(command, { cwd = launch_cwd, detach = true })
       if job_id <= 0 then
-        vim.notify('Failed to open an external terminal for OpenCode', vim.log.levels.ERROR)
+        vim.notify('Failed to open an external terminal for Pi', vim.log.levels.ERROR)
         return
       end
     end
@@ -285,16 +287,16 @@ function M.open(opts)
 
   if opts.initial_prompt and opts.initial_prompt ~= '' then
     vim.defer_fn(function() type_in_external_opencode_session(session_name, opts.initial_prompt) end, created and 800 or 120)
-    vim.notify('Inserted OpenCode range reference into the external session', vim.log.levels.INFO)
+    vim.notify('Inserted Pi range reference into the external session', vim.log.levels.INFO)
     return
   end
 
   if created then
-    vim.notify('Opened a new external OpenCode session', vim.log.levels.INFO)
+    vim.notify('Opened a new external Pi session', vim.log.levels.INFO)
     return
   end
 
-  vim.notify('Opened the existing external OpenCode session', vim.log.levels.INFO)
+  vim.notify('Opened the existing external Pi session', vim.log.levels.INFO)
 end
 
 return M

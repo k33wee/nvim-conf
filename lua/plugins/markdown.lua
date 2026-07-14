@@ -13,9 +13,7 @@ return {
   },
   {
     'toppair/peek.nvim',
-    build = function()
-      vim.system({ 'deno', 'task', 'build:fast' }, { cwd = vim.fn.stdpath 'data' .. '/lazy/peek.nvim' }):wait()
-    end,
+    build = function() vim.system({ 'deno', 'task', 'build:fast' }, { cwd = vim.fn.stdpath 'data' .. '/lazy/peek.nvim' }):wait() end,
     event = 'VeryLazy',
     keys = {
       {

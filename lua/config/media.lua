@@ -12,16 +12,10 @@ end
 local function format_open_error(cmd, result)
   if not cmd or not result or result.code == 0 then return nil end
 
-  return ('vim.ui.open: command %s (%d): %s'):format(
-    result.code == 124 and 'timeout' or 'failed',
-    result.code,
-    vim.inspect(cmd.cmd)
-  )
+  return ('vim.ui.open: command %s (%d): %s'):format(result.code == 124 and 'timeout' or 'failed', result.code, vim.inspect(cmd.cmd))
 end
 
-function M.has_imagemagick()
-  return vim.fn.executable 'magick' == 1 or vim.fn.executable 'convert' == 1
-end
+function M.has_imagemagick() return vim.fn.executable 'magick' == 1 or vim.fn.executable 'convert' == 1 end
 
 function M.image_backend()
   local term = (vim.env.TERM or ''):lower()

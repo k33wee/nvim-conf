@@ -12,18 +12,14 @@ return {
         'K',
         function()
           local winid = require('ufo').peekFoldedLinesUnderCursor()
-          if not winid then
-            vim.lsp.buf.hover()
-          end
+          if not winid then vim.lsp.buf.hover() end
         end,
         desc = 'Peek fold / LSP hover',
       },
     },
     opts = {
       -- Use LSP as main provider, treesitter + indent as fallback
-      provider_selector = function(bufnr, filetype, buftype)
-        return { 'lsp', 'indent' }
-      end,
+      provider_selector = function(bufnr, filetype, buftype) return { 'lsp', 'indent' } end,
       -- Automatically close import/comment folds on buffer open
       close_fold_kinds_for_ft = {
         default = { 'imports', 'comment' },
@@ -45,9 +41,7 @@ return {
             local hlGroup = chunk[2]
             table.insert(newVirtText, { chunkText, hlGroup })
             chunkWidth = vim.fn.strdisplaywidth(chunkText)
-            if curWidth + chunkWidth < targetWidth then
-              suffix = suffix .. (' '):rep(targetWidth - curWidth - chunkWidth)
-            end
+            if curWidth + chunkWidth < targetWidth then suffix = suffix .. (' '):rep(targetWidth - curWidth - chunkWidth) end
             break
           end
           curWidth = curWidth + chunkWidth

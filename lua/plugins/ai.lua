@@ -1,35 +1,32 @@
-local sysname = vim.uv.os_uname().sysname
-local is_macos = sysname == 'Darwin'
-
-local default_completion_model = is_macos and 'qwen2.5-coder:7b' or 'qwen2.5-coder:3b'
+local inline_completion_models = { 'openrouter/free' }
+local default_completion_model = inline_completion_models[1]
+local inline_completion_reasoning_effort = 'minimal'
 local prompt_model = 'gemma4:e4b'
 local completion_model = default_completion_model
-local completion_context_window = is_macos and 1024 or 512
-local completion_request_timeout = is_macos and 2.5 or 1.8
-local completion_throttle = is_macos and 150 or 250
-local completion_debounce = is_macos and 60 or 100
+local completion_context_window = 8000
+local completion_request_timeout = 4
+local completion_throttle = 1500
+local completion_debounce = 600
 
-local function fetch_ollama_models()
-  local result = vim
-    .system({
-      'curl',
-      '-fsSL',
-      'http://127.0.0.1:11434/api/tags',
-    }, { text = true })
-    :wait()
+local function get_pi_openrouter_api_key()
+  local auth_path = vim.fn.expand '~/.pi/agent/auth.json'
+  local ok, lines = pcall(vim.fn.readfile, auth_path)
+  if not ok or not lines or #lines == 0 then return nil end
 
-  if result.code ~= 0 then return nil, (result.stderr or 'failed to query Ollama'):gsub('%s+$', '') end
+  local ok_decode, auth = pcall(vim.json.decode, table.concat(lines, '\n'))
+  if not ok_decode or type(auth) ~= 'table' then return nil end
 
-  local ok, body = pcall(vim.json.decode, result.stdout)
-  if not ok or type(body) ~= 'table' or type(body.models) ~= 'table' then return nil, 'failed to decode Ollama model list' end
+  local api_key = auth.openrouter
+  if type(api_key) == 'table' then api_key = api_key.key end
+  if type(api_key) == 'string' and api_key ~= '' then return api_key end
 
-  local models = {}
-  for _, model in ipairs(body.models) do
-    if type(model) == 'table' and type(model.name) == 'string' then table.insert(models, model.name) end
-  end
+  return nil
+end
 
-  table.sort(models)
-  return models
+local function get_openrouter_api_key()
+  if type(vim.env.OPENROUTER_API_KEY) == 'string' and vim.env.OPENROUTER_API_KEY ~= '' then return vim.env.OPENROUTER_API_KEY end
+
+  return get_pi_openrouter_api_key()
 end
 
 local function set_inline_completion_model(model)
@@ -38,64 +35,32 @@ local function set_inline_completion_model(model)
   local ok, minuet = pcall(require, 'minuet')
   if not ok or not minuet.config then return end
 
-  minuet.config.provider = 'openai_fim_compatible'
-  minuet.config.provider_options.openai_fim_compatible.model = model
+  minuet.config.provider = 'openai_compatible'
+  minuet.config.provider_options.openai_compatible.model = model
 end
 
 local function create_ai_commands()
-  vim.api.nvim_create_user_command('CheckOllamaModels', function()
-    local models, err = fetch_ollama_models()
-    if not models then
-      vim.notify('Ollama model check failed: ' .. err, vim.log.levels.ERROR)
-      return
-    end
-
-    local installed = {}
-    for _, model in ipairs(models) do
-      installed[model] = true
-    end
-
-    local expected_models = { prompt_model, default_completion_model }
-    if completion_model ~= default_completion_model then table.insert(expected_models, completion_model) end
-
+  vim.api.nvim_create_user_command('CheckInlineCompletionProvider', function()
+    local has_env_key = type(vim.env.OPENROUTER_API_KEY) == 'string' and vim.env.OPENROUTER_API_KEY ~= ''
+    local has_pi_auth_key = get_pi_openrouter_api_key() ~= nil
+    local has_key = has_env_key or has_pi_auth_key
     local lines = {
-      'Ollama models:',
-      'inline completion: ' .. completion_model,
-      'prompt workflows: ' .. prompt_model,
+      'Inline completion provider: OpenRouter',
+      'model: ' .. completion_model,
+      'reasoning effort: ' .. inline_completion_reasoning_effort,
+      'OPENROUTER_API_KEY: ' .. (has_env_key and 'set' or 'missing'),
+      'Pi OpenRouter auth: ' .. (has_pi_auth_key and 'set' or 'missing'),
     }
 
-    local missing = {}
-    for _, model in ipairs(expected_models) do
-      if installed[model] then
-        table.insert(lines, 'installed: ' .. model)
-      else
-        table.insert(lines, 'missing: ' .. model)
-        table.insert(missing, model)
-      end
-    end
-
-    local level = #missing == 0 and vim.log.levels.INFO or vim.log.levels.WARN
-    vim.notify(table.concat(lines, '\n'), level, { title = 'CheckOllamaModels' })
-  end, { desc = 'Check local Ollama models for this setup' })
+    local level = has_key and vim.log.levels.INFO or vim.log.levels.WARN
+    vim.notify(table.concat(lines, '\n'), level, { title = 'CheckInlineCompletionProvider' })
+  end, { desc = 'Check OpenRouter inline completion setup' })
 
   vim.api.nvim_create_user_command('SelectInlineModel', function()
-    local models, err = fetch_ollama_models()
-    if not models then
-      vim.notify('Unable to list Ollama models: ' .. err, vim.log.levels.ERROR)
-      return
-    end
-
-    if #models == 0 then
-      vim.notify('No local Ollama models found', vim.log.levels.WARN)
-      return
-    end
-
-    vim.ui.select(models, {
+    vim.ui.select(inline_completion_models, {
       prompt = 'Select inline completion model:',
       format_item = function(item)
         if item == completion_model then return item .. ' (current)' end
-
-        if item == default_completion_model then return item .. ' (recommended)' end
 
         return item
       end,
@@ -105,7 +70,7 @@ local function create_ai_commands()
       set_inline_completion_model(choice)
       vim.notify('Inline completion model set to ' .. choice, vim.log.levels.INFO)
     end)
-  end, { desc = 'Select local Ollama model for inline completion' })
+  end, { desc = 'Select OpenRouter model for inline completion' })
 end
 
 return {
@@ -117,7 +82,7 @@ return {
     },
     opts = function()
       return {
-        provider = 'openai_fim_compatible',
+        provider = 'openai_compatible',
         n_completions = 3,
         context_window = completion_context_window,
         request_timeout = completion_request_timeout,
@@ -126,16 +91,21 @@ return {
         notify = 'error',
         add_single_line_entry = false,
         provider_options = {
-          openai_fim_compatible = {
-            name = 'Ollama',
-            end_point = 'http://127.0.0.1:11434/v1/completions',
+          openai_compatible = {
+            name = 'OpenRouter',
+            end_point = 'https://openrouter.ai/api/v1/chat/completions',
             model = completion_model,
-            api_key = function() return 'ollama' end,
+            api_key = get_openrouter_api_key,
             stream = true,
             optional = {
-              max_tokens = 32,
+              max_tokens = 56,
               top_p = 0.9,
-              stop = { '\n\n' },
+              provider = {
+                sort = 'throughput',
+              },
+              reasoning = {
+                effort = inline_completion_reasoning_effort,
+              },
             },
           },
         },
