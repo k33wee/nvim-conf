@@ -152,6 +152,14 @@ local function tmux_session_exists(session_name)
   return vim.v.shell_error == 0
 end
 
+local function enable_tmux_scrolling(session_name)
+  vim.fn.system { 'tmux', 'set-option', '-t', session_name, 'mouse', 'on' }
+  if vim.v.shell_error == 0 then return true end
+
+  vim.notify('Failed to enable mouse scrolling in the external Pi session', vim.log.levels.WARN)
+  return false
+end
+
 local function ensure_external_opencode_session()
   if vim.fn.executable 'tmux' ~= 1 then
     vim.notify('tmux is required for the external Pi workflow', vim.log.levels.ERROR)
@@ -164,16 +172,20 @@ local function ensure_external_opencode_session()
   end
 
   local session_name, cwd = external_opencode_session_name()
-  if tmux_session_exists(session_name) then return session_name, cwd, false end
+  if tmux_session_exists(session_name) then
+    enable_tmux_scrolling(session_name)
+    return session_name, cwd, false
+  end
 
   local command = { 'tmux', 'new-session', '-d', '-s', session_name, '-c', cwd }
   vim.list_extend(command, pi.args())
-  local job_id = vim.fn.jobstart(command, { cwd = cwd, detach = true })
-  if job_id <= 0 then
+  vim.fn.system(command)
+  if vim.v.shell_error ~= 0 then
     vim.notify('Failed to start external Pi session', vim.log.levels.ERROR)
     return nil, nil, nil
   end
 
+  enable_tmux_scrolling(session_name)
   return session_name, cwd, true
 end
 
